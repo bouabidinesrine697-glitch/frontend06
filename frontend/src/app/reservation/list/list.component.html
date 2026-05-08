@@ -1,0 +1,153 @@
+<div class="max-w-5xl mx-auto p-6">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-lg font-semibold text-gray-900 dark:text-white">Réservations</h1>
+      <p class="text-xs text-gray-500 mt-0.5">
+        {{ filteredReservations.length }} réservation{{ filteredReservations.length > 1 ? 's' : '' }} au total
+      </p>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="relative max-w-sm mb-6">
+    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+      <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/>
+      </svg>
+    </div>
+    <input type="search" placeholder="Rechercher..."
+      [value]="searchQuery"
+      (input)="onSearch($any($event.target).value)"
+      class="w-full pl-9 pr-4 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+          <th class="text-left px-4 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Client</th>
+          <th class="text-left px-4 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Trottinette</th>
+          <th class="text-left px-4 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Début</th>
+          <th class="text-left px-4 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Fin</th>
+          <th class="text-left px-4 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Coût</th>
+          <th class="text-left px-4 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Statut</th>
+          <th class="text-right px-4 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of filteredReservations; let last = last"
+          [class.border-b]="!last"
+          class="border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+
+          <!-- Client -->
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-[11px] font-semibold text-blue-700">
+                {{ r.client_details?.nom?.toUpperCase() || '?' }}
+              </div>
+              <span class="text-[13px] font-medium text-gray-900 dark:text-white">
+                {{ r.client_details?.prenom || 'N/A' }}
+              </span>
+            </div>
+          </td>
+
+          <!-- Trottinette -->
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center text-[11px] font-semibold text-emerald-700">
+                {{ r.trottinette_details?.model?.[0]?.toUpperCase() || '?' }}
+              </div>
+              <div>
+                <p class="text-[13px] font-medium text-gray-900 dark:text-white">
+                  {{ r.trottinette_details?.model || 'N/A' }}
+                </p>
+                <p class="text-[11px] text-gray-500 font-mono">
+                  {{ r.trottinette_details?.QR_code || '' }}
+                </p>
+              </div>
+            </div>
+          </td>
+
+          <!-- Début -->
+          <td class="px-4 py-3">
+            <p class="text-[12px] text-gray-600 dark:text-gray-400">{{ formatDate(r.start_time) }}</p>
+          </td>
+
+          <!-- Fin -->
+          <td class="px-4 py-3">
+            <p class="text-[12px] text-gray-600 dark:text-gray-400">
+              {{ r.end_time ? formatDate(r.end_time) : '—' }}
+            </p>
+          </td>
+
+          <!-- Coût -->
+          <td class="px-4 py-3">
+            <p class="text-[13px] font-medium text-gray-900 dark:text-white">
+              {{ r.total_cost | number:'1.2-2' }} TND
+            </p>
+          </td>
+
+          <!-- Statut -->
+          <td class="px-4 py-3">
+            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+              [ngClass]="{
+                'bg-yellow-100 text-yellow-700': r.status === 'en_attente',
+                'bg-green-100 text-green-700':   r.status === 'confirmée',
+                'bg-red-100 text-red-700':        r.status === 'refusée',
+                'bg-gray-100 text-gray-700':      r.status === 'terminée'
+              }">
+              {{ r.status }}
+            </span>
+          </td>
+
+          <!-- Actions -->
+          <td class="px-4 py-3">
+            <div class="flex items-center justify-end gap-1">
+
+              <!-- Confirmer / Refuser -->
+              <ng-container *ngIf="r.status === 'en_attente'">
+                <button (click)="onConfirm(r.id)"
+                  class="px-2 py-1 text-[11px] font-medium bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors">
+                  ✅ Confirmer
+                </button>
+                <button (click)="onRefuser(r.id)"
+                  class="px-2 py-1 text-[11px] font-medium bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors">
+                  ❌ Refuser
+                </button>
+              </ng-container>
+
+              <!-- Supprimer -->
+              <ng-container *ngIf="deleteConfirmId === r.id; else normalDelete">
+                <span class="text-[11px] text-gray-500 mr-1">Confirmer ?</span>
+                <button (click)="onDelete(r.id)"
+                  class="px-2 py-1 text-[11px] font-medium bg-red-600 hover:bg-red-700 text-white rounded-md">
+                  Oui
+                </button>
+                <button (click)="cancelDelete()"
+                  class="px-2 py-1 text-[11px] font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 rounded-md">
+                  Non
+                </button>
+              </ng-container>
+
+              <ng-template #normalDelete>
+                <button (click)="confirmDelete(r.id)"
+                  class="w-7 h-7 flex items-center justify-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6M14 11v6"/>
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                  </svg>
+                </button>
+              </ng-template>
+
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
